@@ -1,5 +1,5 @@
 # Scripts
-## net_monitor.py
+## NetMonitor.py
 Logs internet uptime and speed tests to build evidence for ISP complaints.
 
 Run: `python3 net_monitor.py`

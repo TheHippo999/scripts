@@ -6,7 +6,7 @@ Run: `python3 net_monitor.py`
 Needs: `pip install speedtest-cli`
 Output: writes results to a CSV in the same folder.
 
-## DUPR Server
+## dupr_server.py
 
 A single-file Python web app for looking up DUPR pickleball ratings,
 match history and tournament rosters. It runs a small local web server,

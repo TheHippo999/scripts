@@ -58,7 +58,11 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 # ---------------------------------------------------------------- CONFIG ---
-VERSION = "1.4.0"                     # bump this each time you generate/copy a new build
+VERSION = "1.4.1"                     # bump this each time you generate/copy a new build
+
+# Public IP used to ask macOS "which interface would carry this traffic?"
+# for VPN detection. Nothing is sent to it; it's only a routing-table lookup.
+VPN_ROUTE_PROBE_IP = "1.1.1.1"
 
 # Used to geolocate your public IP when a VPN is detected, so you can see
 # which exit server/location a given speed test ran through. No API key
@@ -126,21 +130,24 @@ def is_vpn_connected() -> bool:
     """
     Best-effort check for whether traffic is currently routing through a VPN
     (e.g. ExpressVPN). We don't rely on any VPN vendor's CLI — ExpressVPN's
-    menu bar app doesn't ship one — instead we ask macOS which interface the
-    default route is using. VPN clients (ExpressVPN included) install a
-    virtual "utun" interface and point the default route at it once
-    connected; your normal Wi-Fi/Ethernet route uses "en0"/"en1" etc.
+    menu bar app doesn't ship one — instead we ask macOS which interface
+    would carry traffic to a real public address.
 
-    This is macOS-specific (uses `route get default`). On other platforms
-    it always returns False — let us know if you end up running this
-    somewhere other than your Mac and we can add a branch for it.
+    NOTE: we deliberately do NOT use `route get default`. VPN clients leave
+    the default route on en0 and add two more-specific split routes
+    (0.0.0.0/1 and 128.0.0.0/1) via a "utun" interface, which override it.
+    Asking for the route to an actual public IP makes the kernel pick the
+    most specific match, so the split routes are honoured. (Verified on
+    the author's Mac with ExpressVPN: default -> en0, 1.1.1.1 -> utun8.)
+
+    This is macOS-specific. On other platforms it always returns False.
     """
     if sys.platform != "darwin":
         return False
 
     try:
         result = subprocess.run(
-            ["route", "get", "default"],
+            ["route", "get", VPN_ROUTE_PROBE_IP],
             capture_output=True,
             text=True,
             timeout=5,
